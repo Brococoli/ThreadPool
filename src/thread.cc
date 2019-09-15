@@ -18,9 +18,7 @@ int Thread::Join(){
 }
 
 int Thread::Destroy(){
-    int ret;
-    pthread_exit(&ret);
-    return ret;
+    return pthread_cancel(tid_);
 }
 
 
@@ -38,15 +36,15 @@ int Thread::Notify(){
 }
 void* DealTask(void* arg){
     Thread* thread = static_cast<Thread*>(arg);
-    bool lock;
     for(;;){
-        lock = false;
+        thread->Lock();
         if(thread->task().Empty()){
-            thread->Lock();
             /* printf("%ld wait\n", pthread_self()); */
             thread->Wait();
-            lock = true;
+            thread->Unlock();
         }
+        else
+            thread->Unlock();
 
         thread->set_running(true); 
         /* printf("%ld run\n", pthread_self()); */
@@ -58,7 +56,5 @@ void* DealTask(void* arg){
         thread->thread_pool()->PutIdleList(thread);
         thread->set_running(false);
         /* printf("%ld over\n", pthread_self()); */
-        if(lock)
-            thread->Unlock();
     }
 }

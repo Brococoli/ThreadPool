@@ -120,21 +120,19 @@ void ThreadPool::CreateThreadAndWait(){
 void* ThreadPoolMain(void* arg){
     /* printf("into ThreadPoolMain\n"); */
     ThreadPool* tp = static_cast<ThreadPool*>(arg);
-    bool lock = false;
     for(;;){
-        lock = false;
+        tp->Lock();
         if(tp->TaskListEmpty()){
-            tp->Lock();
             /* printf("threadPool wait\n"); */
             tp->Wait();  //wait for task comming;
-            lock = true;
+            tp->Unlock();
         }
+        else
+            tp->Unlock();
         /* printf("threadPool DispatcherTask\n"); */
         tp->DispatcherTask();
         /* printf("ModifyThreadNumber\n"); */
         tp->ModifyThreadNumber();
-        if(lock)
-            tp->Unlock();
         /* printf("threadPool over\n"); */
 
     }
@@ -151,6 +149,25 @@ int ThreadPool::JoinThreads(){
     }
     pthread_rwlock_unlock(&total_list_lock_);
     return ok;
+}
+int ThreadPool::DestroyThreads(){
+    int ok = 1;
+    Thread* thread;
+    pthread_rwlock_wrlock(&total_list_lock_);
+    while(!total_list_.empty()){
+        thread = total_list_.front();
+        if(thread->Destroy() != 0){
+            err_ret("Destroy error");
+            ok = -1;
+        }
+        else{
+            delete thread;
+            total_list_.pop_front();
+        }
+    }
+    pthread_rwlock_unlock(&total_list_lock_);
+    return ok;
+
 }
 int ThreadPool::Join(){
     return pthread_join(tid_, NULL);

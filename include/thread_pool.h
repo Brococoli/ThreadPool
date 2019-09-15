@@ -39,7 +39,10 @@ public:
         task_mutex_lock_ = PTHREAD_MUTEX_INITIALIZER;
 
     }
-    ~ThreadPool() {}
+    ~ThreadPool() {
+       DestroyThreads(); 
+    }
+
 
     //this is the five basic step.
     void InitThreads();
@@ -49,6 +52,7 @@ public:
     void AddTask(func ff, void* arg) { AddTask(Task(ff, arg));};
     int DispatcherTask();  //将任务分发给线程
     int JoinThreads();
+    int DestroyThreads();
     int Join();
 
     void PutIdleList(Thread*); 

@@ -22,6 +22,8 @@ int main()
     tp.Notify();
     tp.Unlock(); 
 
+    sleep(5);
+    tp.DestroyThreads();
     tp.Join();
     printf("End \n");
 
